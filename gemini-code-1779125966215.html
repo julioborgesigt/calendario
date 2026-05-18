@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendador DomCloud</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h2 id="calendar-title">Agendamento</h2>
+        <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <div class="modal-backdrop" id="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Nova Tarefa</h3>
+            <div class="error-box" id="errorBox" style="display: none;"></div>
+
+            <form id="taskForm">
+                <label>
+                    Descrição:
+                    <input type="text" id="description" required placeholder="Ex: Atendimento ao cliente">
+                </label>
+                <label>
+                    Horário de Início:
+                    <input type="time" id="startTime" required>
+                </label>
+                <label>
+                    Previsão de Tempo:
+                    <select id="duration" required>
+                        <option value="30">00:30min</option>
+                        <option value="60">01:00H</option>
+                        <option value="90">01:30min</option>
+                        <option value="120">02:00H</option>
+                    </select>
+                </label>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-save">Salvar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let tasks = [];
+        let selectedDate = '';
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+
+        document.getElementById('calendar-title').innerText = `Agendamento - Mês ${currentMonth + 1}/${currentYear}`;
+
+        async function loadTasks() {
+            const res = await fetch('/api/tasks');
+            if (res.ok) {
+                tasks = await res.json();
+                renderCalendar();
+            }
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                const dayCard = document.createElement('div');
+                dayCard.className = 'day-card';
+                dayCard.onclick = () => openModal(dayStr);
+
+                const dayNumber = document.createElement('span');
+                dayNumber.className = 'day-number';
+                dayNumber.innerText = day;
+                dayCard.appendChild(dayNumber);
+
+                const indicators = document.createElement('div');
+                indicators.className = 'task-indicators';
+
+                const dayTasks = tasks.filter(t => t.date === dayStr);
+                dayTasks.sort((a,b) => a.startTime.localeCompare(b.startTime));
+
+                dayTasks.forEach(task => {
+                    const badge = document.createElement('div');
+                    badge.className = 'task-badge';
+                    badge.innerText = `${task.startTime} - ${task.description}`;
+                    indicators.appendChild(badge);
+                });
+
+                dayCard.appendChild(indicators);
+                grid.appendChild(dayCard);
+            }
+        }
+
+        function openModal(date) {
+            selectedDate = date;
+            document.getElementById('modalTitle').innerText = `Nova Tarefa: ${date}`;
+            document.getElementById('errorBox').style.display = 'none';
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('taskForm').reset();
+        }
+
+        document.getElementById('taskForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const errorBox = document.getElementById('errorBox');
+            errorBox.style.display = 'none';
+
+            const payload = {
+                date: selectedDate,
+                description: document.getElementById('description').value,
+                startTime: document.getElementById('startTime').value,
+                durationMinutes: parseInt(document.getElementById('duration').value)
+            };
+
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+
+            if (!res.ok) {
+                errorBox.innerText = result.message;
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            tasks.push(result.task);
+            renderCalendar();
+            closeModal();
+        };
+
+        loadTasks();
+    </script>
+</body>
+</html>

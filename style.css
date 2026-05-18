@@ -186,7 +186,7 @@ body {
    5. LISTAGEM DE AGENDAMENTOS (DENTRO DO MODAL)
    ========================================================================== */
 .day-tasks-list {
-    max-height: 220px;
+    max-height: 60vh;
     overflow-y: auto;
     margin: 10px 0;
     border: 1px solid #e2e8f0;

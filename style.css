@@ -167,6 +167,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    animation: slideUp 0.3s ease-out;
 }
 
 .modal-content h3 {
@@ -290,6 +291,15 @@ button {
     font-weight: bold;
     font-size: 0.9rem;
     transition: background-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+svg.lucide {
+    width: 1.1rem;
+    height: 1.1rem;
 }
 
 button:active {
@@ -323,9 +333,9 @@ button:active {
 }
 
 .task-actions-inline button {
-    padding: 6px 12px;
+    padding: 8px;
     font-size: 0.75rem;
-    border-radius: 4px;
+    border-radius: 6px;
     font-weight: 600;
 }
 
@@ -348,11 +358,94 @@ button:active {
 }
 
 /* ==========================================================================
-   8. RESPONSIVIDADE (DISPOSITIVOS MÓVEIS)
+   8.5 BOTÃO DE ALTERNÂNCIA (TOGGLE VIEW)
+   ========================================================================== */
+.view-toggle-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+}
+
+.btn-toggle-view {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    background: white;
+    color: #4a5568;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.btn-toggle-view:hover {
+    background: #f7fafc;
+}
+
+/* ==========================================================================
+   9. LOADER E ANIMAÇÕES
+   ========================================================================== */
+.global-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.6);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #3182ce;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-backdrop[style*="display: flex"] {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* ==========================================================================
+   10. RESPONSIVIDADE (DISPOSITIVOS MÓVEIS)
    ========================================================================== */
 @media (max-width: 768px) {
     body {
         padding: 10px;
+    }
+    
+    .view-toggle-container {
+        justify-content: stretch;
+    }
+    
+    .btn-toggle-view {
+        width: 100%;
+        padding: 12px;
     }
     
     .calendar-header {
@@ -399,6 +492,7 @@ button:active {
     .modal-content {
         padding: 15px;
         max-width: 95%;
+        height: auto;
     }
     
     .task-list-item {
@@ -410,5 +504,68 @@ button:active {
         margin-top: 8px;
         width: 100%;
         justify-content: flex-end;
+    }
+}
+
+/* ==========================================================================
+   11. VISUALIZAÇÃO SEMANAL (LISTA)
+   ========================================================================== */
+.weekly-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.week-day-row {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    min-height: 80px;
+}
+
+.week-day-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e0;
+}
+
+.week-day-row.today {
+    border-left: 5px solid #3182ce;
+    background-color: #ebf8ff;
+}
+
+.week-day-label {
+    flex: 0 0 150px;
+    font-size: 1.1rem;
+    color: #2d3748;
+}
+
+.week-day-label strong {
+    font-size: 1.4rem;
+    color: #3182ce;
+}
+
+.week-day-tasks {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .week-day-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .week-day-label {
+        flex: 0 0 auto;
     }
 }

@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "main": "script.js",
   "scripts": {
-    "start": "node script.js"
+    "start": "node script.js",
+    "dev": "node script.js"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "mysql2": "^3.11.0"
   }
 }

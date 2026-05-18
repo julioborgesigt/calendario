@@ -197,3 +197,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
     console.log(`Servidor ativo na porta ${PORT}`);
 });
+
+server.listen(PORT, () => {
+    console.log(`Servidor ativo na porta ${PORT}`);
+});

@@ -90,6 +90,7 @@ body {
     transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .day-card:hover {
@@ -125,8 +126,7 @@ body {
     flex-direction: column;
     gap: 4px;
     flex-grow: 1;
-    overflow-y: auto;
-    max-height: 80px;
+    min-width: 0;
 }
 
 .task-badge {
@@ -135,9 +135,9 @@ body {
     color: white;
     padding: 4px 6px;
     border-radius: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.2;
     font-weight: 500;
 }
 
@@ -148,8 +148,8 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    right: 0;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     display: none; /* O JS muda para 'flex' ao abrir */
     align-items: center;
@@ -379,18 +379,19 @@ button:active {
     }
     
     .day-card {
-        min-height: 85px;
-        padding: 4px;
+        min-height: 75px;
+        padding: 3px;
     }
     
     .day-number {
-        font-size: 0.9rem;
-        margin-bottom: 4px;
+        font-size: 0.8rem;
+        margin-bottom: 2px;
     }
     
     .task-badge {
-        font-size: 0.65rem;
-        padding: 2px 4px;
+        font-size: 0.55rem;
+        padding: 1px 3px;
+        line-height: 1.1;
     }
 }
 

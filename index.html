@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agendador DomCloud</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/style.css?v=2">
 </head>
+
 <body>
 
     <div class="container">
         <!-- Cabeçalho com botões de navegação de meses -->
         <div class="calendar-header">
-            <button type="button" class="btn-nav" onclick="changeMonth(-1)">&lt; Mês Anterior</button>
+            <button type="button" class="btn-nav" onclick="changeMonth(-1)">&lt; Anterior</button>
             <h2 id="calendar-title">Agendamento</h2>
-            <button type="button" class="btn-nav" onclick="changeMonth(1)">Próximo Mês &gt;</button>
+            <button type="button" class="btn-nav" onclick="changeMonth(1)">Próximo &gt;</button>
         </div>
-        
+
         <div class="calendar-grid" id="calendarGrid"></div>
     </div>
 
@@ -46,14 +48,14 @@
                 </label>
                 <label>
                     Descrição:
-                    <input type="text" id="description" required placeholder="Ex: Detalhes do agendamento">
+                    <input type="text" id="description" required placeholder="Ex: Nº do procedimento">
                 </label>
                 <label>
                     Horário de Início:
                     <input type="time" id="startTime" required>
                 </label>
                 <label>
-                    Previsão de Tempo:
+                    Duração Estimada:
                     <select id="duration" required>
                         <option value="30">00:30min</option>
                         <option value="60">01:00H</option>
@@ -73,7 +75,7 @@
         let tasks = [];
         let selectedDate = '';
         let editingTaskId = null;
-        
+
         // Mantém o controle do mês e ano visualizados
         const todayObj = new Date();
         let currentMonth = todayObj.getMonth();
@@ -137,15 +139,15 @@
             // 4. Renderiza os cartões dos dias reais do mês
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                
+
                 const dayCard = document.createElement('div');
                 dayCard.className = 'day-card';
-                
+
                 // Destaca se for o dia de hoje
                 if (todayObj.getDate() === day && todayObj.getMonth() === currentMonth && todayObj.getFullYear() === currentYear) {
                     dayCard.classList.add('today');
                 }
-                
+
                 dayCard.onclick = () => openModal(dayStr);
 
                 const dayNumber = document.createElement('span');
@@ -158,7 +160,7 @@
 
                 // Filtra e ordena as tarefas do dia pelo horário de início
                 const dayTasks = tasks.filter(t => t.date === dayStr);
-                dayTasks.sort((a,b) => a.startTime.localeCompare(b.startTime));
+                dayTasks.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
                 dayTasks.forEach(task => {
                     const badge = document.createElement('div');
@@ -177,20 +179,20 @@
             editingTaskId = null;
             document.getElementById('modalTitle').innerText = `Data: ${date.split('-').reverse().join('/')}`;
             document.getElementById('errorBox').style.display = 'none';
-            
-            showViewSection(); 
+
+            showViewSection();
             document.getElementById('modal').style.display = 'flex';
         }
 
         function showViewSection() {
             document.getElementById('taskForm').style.display = 'none';
             document.getElementById('viewScheduleSection').style.display = 'block';
-            
+
             const listContainer = document.getElementById('dayTasksList');
             listContainer.innerHTML = '';
 
             const dayTasks = tasks.filter(t => t.date === selectedDate);
-            dayTasks.sort((a,b) => a.startTime.localeCompare(b.startTime));
+            dayTasks.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
             if (dayTasks.length === 0) {
                 listContainer.innerHTML = '<p class="no-tasks">Nenhum agendamento para este dia.</p>';
@@ -297,4 +299,5 @@
         loadTasks();
     </script>
 </body>
+
 </html>

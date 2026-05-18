@@ -18,13 +18,11 @@
     <div class="container">
         <!-- Cabeçalho com botões de navegação de meses -->
         <div class="calendar-header">
-            <button type="button" class="btn-nav" onclick="navigate(-1)"><i data-lucide="chevron-left"></i>
-                Ant.</button>
+            <button type="button" class="btn-nav" onclick="navigate(-1)"><i data-lucide="chevron-left"></i></button>
             <div class="header-center" style="display: flex; align-items: center; gap: 15px;">
                 <h2 id="calendar-title" style="margin: 0;">Agendamento</h2>
             </div>
-            <button type="button" class="btn-nav" onclick="navigate(1)">Próx. <i
-                    data-lucide="chevron-right"></i></button>
+            <button type="button" class="btn-nav" onclick="navigate(1)"><i data-lucide="chevron-right"></i></button>
         </div>
 
         <div class="view-toggle-container">
@@ -112,17 +110,33 @@
 
         function getWeekNumberInMonth(date) {
             const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-            const pastDaysOfMonth = (date.getDate() - 1) + firstDay.getDay();
-            return Math.ceil(pastDaysOfMonth / 7) || 1;
+            // Corrige o cálculo para que todo domingo (getDay === 0) pule para a próxima semana
+            return Math.ceil((date.getDate() + firstDay.getDay()) / 7);
         }
 
         function updateTitle() {
             if (viewMode === 'month') {
                 document.getElementById('calendar-title').innerText = `${monthNames[currentMonth]} de ${currentYear}`;
             } else {
-                const weekNum = getWeekNumberInMonth(currentWeekStart);
-                const monthName = monthNames[currentWeekStart.getMonth()];
-                document.getElementById('calendar-title').innerText = `Semana ${weekNum} de ${monthName}`;
+                const endOfWeek = new Date(currentWeekStart);
+                endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+                const startMonth = currentWeekStart.getMonth();
+                const endMonth = endOfWeek.getMonth();
+
+                if (startMonth === endMonth) {
+                    const weekNum = getWeekNumberInMonth(currentWeekStart);
+                    document.getElementById('calendar-title').innerText = `Sem. ${weekNum} de ${monthNames[startMonth]}`;
+                } else {
+                    // Mês de transição
+                    const weekNumStart = getWeekNumberInMonth(currentWeekStart);
+                    const weekNumEnd = getWeekNumberInMonth(endOfWeek);
+
+                    const shortStartMonth = monthNames[startMonth].substring(0, 3);
+                    const shortEndMonth = monthNames[endMonth].substring(0, 3);
+
+                    document.getElementById('calendar-title').innerText = `Sem. ${weekNumStart} ${shortStartMonth} / Sem. ${weekNumEnd} ${shortEndMonth}`;
+                }
             }
         }
 
@@ -295,7 +309,8 @@
                 dayTasks.forEach(task => {
                     const badge = document.createElement('div');
                     badge.className = 'task-badge';
-                    badge.innerText = `${task.startTime} - ${task.firstName}`;
+                    const nameStr = task.firstName.length > 12 ? task.firstName.substring(0, 12) + '...' : task.firstName;
+                    badge.innerText = `${task.startTime} - ${nameStr}`;
                     tasksContainer.appendChild(badge);
                 });
 

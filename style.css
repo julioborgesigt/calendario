@@ -559,6 +559,18 @@ button:active {
     gap: 8px;
 }
 
+.weekly-list .task-badge {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 140px;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+}
+
 @media (max-width: 768px) {
     .week-day-row {
         flex-direction: column;

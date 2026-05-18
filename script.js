@@ -29,7 +29,6 @@ function minutesToTime(totalMinutes) {
 }
 
 const server = http.createServer(async (req, res) => {
-    // Processamento simplificado de rotas e parâmetros usando a API URL nativa
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const pathname = parsedUrl.pathname;
     const method = req.method;
@@ -137,7 +136,6 @@ const server = http.createServer(async (req, res) => {
                 const startTimeDb = `${startTime}:00`;
                 const endTimeDb = minutesToTime(endMinutes);
 
-                // IMPORTANTE: id != ? impede que o registro choque com o seu próprio horário antigo
                 const [conflicts] = await pool.query(`
                     SELECT task_type, first_name, TIME_FORMAT(start_time, "%H:%i") as start, TIME_FORMAT(end_time, "%H:%i") as end 
                     FROM tasks 
@@ -194,10 +192,7 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
-server.listen(PORT, () => {
-    console.log(`Servidor ativo na porta ${PORT}`);
-});
-
+// Apenas uma chamada ao método listen ao final do arquivo inteiro
 server.listen(PORT, () => {
     console.log(`Servidor ativo na porta ${PORT}`);
 });

@@ -94,7 +94,7 @@ h2 {
     width: 100vw;
     height: 100vh;
     background: rgba(0, 0, 0, 0.5);
-    display: none; /* Controlado dinamicamente pelo JS via flex */
+    display: none; /* O JS muda para 'flex' ao abrir */
     align-items: center;
     justify-content: center;
     z-index: 100;
@@ -126,7 +126,7 @@ h2 {
 }
 
 /* ==========================================================================
-   5. LISTAGEM DE AGENDAMENTOS DENTRO DO MODAL
+   5. LISTAGEM DE AGENDAMENTOS (DENTRO DO MODAL)
    ========================================================================== */
 .day-tasks-list {
     max-height: 220px;
@@ -203,7 +203,7 @@ input:disabled, select:disabled {
     cursor: not-allowed;
 }
 
-/* Caixa de Erro */
+/* Caixa de Alerta/Erro */
 .error-box {
     background: #fff5f5;
     color: #c53030;
@@ -216,7 +216,7 @@ input:disabled, select:disabled {
 }
 
 /* ==========================================================================
-   7. BOTÕES E AÇÕES
+   7. BOTÕES GERAIS E AÇÕES INLINE (EDITAR/EXCLUIR)
    ========================================================================== */
 .modal-actions {
     display: flex;
@@ -258,7 +258,7 @@ button:active {
     background: #2f855a;
 }
 
-/* Botões Inline (Ações Rápidas na Lista do Modal) */
+/* Ações Rápidas Inline (na lista de tarefas) */
 .task-actions-inline {
     display: flex;
     gap: 6px;
@@ -310,7 +310,7 @@ button:active {
 
 @media (max-width: 480px) {
     .calendar-grid {
-        grid-template-columns: repeat(2, 1fr); /* Duas colunas para telas pequenas */
+        grid-template-columns: repeat(2, 1fr); /* Duas colunas para telas muito pequenas */
     }
     
     .modal-content {

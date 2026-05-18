@@ -57,7 +57,7 @@
                 </label>
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" onclick="showViewSection()">Voltar</button>
-                    <button type="submit" class="btn-save">Salvar Agendamento</button>
+                    <button type="submit" class="btn-save" id="btnSubmitForm">Salvar Agendamento</button>
                 </div>
             </form>
         </div>
@@ -66,6 +66,8 @@
     <script>
         let tasks = [];
         let selectedDate = '';
+        let editingTaskId = null; // Controla se estamos editando (armazena o ID) ou criando (null)
+        
         const today = new Date();
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
@@ -106,7 +108,6 @@
                 dayTasks.forEach(task => {
                     const badge = document.createElement('div');
                     badge.className = 'task-badge';
-                    // REGRA: Exibir apenas "Oitiva primeiro nome"
                     badge.innerText = `${task.taskType} ${task.firstName}`;
                     indicators.appendChild(badge);
                 });
@@ -118,6 +119,7 @@
 
         function openModal(date) {
             selectedDate = date;
+            editingTaskId = null;
             document.getElementById('modalTitle').innerText = `Data: ${date.split('-').reverse().join('/')}`;
             document.getElementById('errorBox').style.display = 'none';
             
@@ -141,7 +143,16 @@
                 dayTasks.forEach(task => {
                     const item = document.createElement('div');
                     item.className = 'task-list-item';
-                    item.innerHTML = `<strong>${task.startTime} às ${task.endTime}</strong> - ${task.taskType} ${task.firstName}<br><small>${task.description}</small>`;
+                    item.innerHTML = `
+                        <div class="task-info">
+                            <strong>${task.startTime} às ${task.endTime}</strong> - ${task.taskType} ${task.firstName}
+                            <div class="task-desc-text">${task.description}</div>
+                        </div>
+                        <div class="task-actions-inline">
+                            <button type="button" class="btn-inline-edit" onclick="startEditTask(${task.id})">Editar</button>
+                            <button type="button" class="btn-inline-delete" onclick="deleteTask(${task.id})">Excluir</button>
+                        </div>
+                    `;
                     listContainer.appendChild(item);
                 });
             }
@@ -150,11 +161,39 @@
         function showFormSection() {
             document.getElementById('viewScheduleSection').style.display = 'none';
             document.getElementById('taskForm').style.display = 'block';
+            document.getElementById('btnSubmitForm').innerText = editingTaskId ? 'Atualizar Agendamento' : 'Salvar Agendamento';
+        }
+
+        function startEditTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            editingTaskId = id;
+            document.getElementById('firstName').value = task.firstName;
+            document.getElementById('description').value = task.description;
+            document.getElementById('startTime').value = task.startTime;
+            document.getElementById('duration').value = task.durationMinutes;
+
+            showFormSection();
+        }
+
+        async function deleteTask(id) {
+            if (!confirm('Deseja realmente excluir este agendamento?')) return;
+
+            const res = await fetch(`/api/tasks?id=${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                tasks = tasks.filter(t => t.id !== id);
+                renderCalendar();
+                showViewSection();
+            } else {
+                alert('Erro ao excluir tarefa.');
+            }
         }
 
         function closeModal() {
             document.getElementById('modal').style.display = 'none';
             document.getElementById('taskForm').reset();
+            editingTaskId = null;
         }
 
         document.getElementById('taskForm').onsubmit = async (e) => {
@@ -171,8 +210,12 @@
                 durationMinutes: parseInt(document.getElementById('duration').value)
             };
 
+            // Se editingTaskId possuir valor, mudamos para PUT e incluímos o id no corpo
+            const isEditing = editingTaskId !== null;
+            if (isEditing) payload.id = editingTaskId;
+
             const res = await fetch('/api/tasks', {
-                method: 'POST',
+                method: isEditing ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
@@ -185,7 +228,12 @@
                 return;
             }
 
-            tasks.push(result.task);
+            if (isEditing) {
+                tasks = tasks.map(t => t.id === editingTaskId ? result.task : t);
+            } else {
+                tasks.push(result.task);
+            }
+
             renderCalendar();
             closeModal();
         };

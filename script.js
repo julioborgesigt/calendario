@@ -29,19 +29,25 @@ function minutesToTime(totalMinutes) {
 }
 
 const server = http.createServer(async (req, res) => {
-    if (req.url === '/' && req.method === 'GET') {
+    // Processamento simplificado de rotas e parâmetros usando a API URL nativa
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const pathname = parsedUrl.pathname;
+    const method = req.method;
+
+    if (pathname === '/' && method === 'GET') {
         fs.readFile(path.join(__dirname, 'index.html'), (err, content) => {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(content);
         });
     } 
-    else if (req.url === '/style.css' && req.method === 'GET') {
+    else if (pathname === '/style.css' && method === 'GET') {
         fs.readFile(path.join(__dirname, 'style.css'), (err, content) => {
             res.writeHead(200, { 'Content-Type': 'text/css' });
             res.end(content);
         });
     } 
-    else if (req.url === '/api/tasks' && req.method === 'GET') {
+    // API GET: Buscar tarefas
+    else if (pathname === '/api/tasks' && method === 'GET') {
         try {
             const [rows] = await pool.query(`
                 SELECT 
@@ -58,12 +64,13 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(rows));
         } catch (error) {
-            console.error("Erro no GET /api/tasks:", error);
+            console.error(error);
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, message: 'Erro ao buscar dados do banco.' }));
+            res.end(JSON.stringify({ success: false, message: 'Erro ao buscar dados.' }));
         }
     } 
-    else if (req.url === '/api/tasks' && req.method === 'POST') {
+    // API POST: Cadastrar nova tarefa
+    else if (pathname === '/api/tasks' && method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', async () => {
@@ -72,7 +79,7 @@ const server = http.createServer(async (req, res) => {
 
                 if (!date || !description || !startTime || !durationMinutes || !firstName) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({ success: false, message: 'Preencha todos os campos obrigatórios!' }));
+                    return res.end(JSON.stringify({ success: false, message: 'Campos obrigatórios ausentes.' }));
                 }
 
                 const startMinutes = timeToMinutes(startTime);
@@ -80,7 +87,6 @@ const server = http.createServer(async (req, res) => {
                 const startTimeDb = `${startTime}:00`;
                 const endTimeDb = minutesToTime(endMinutes);
 
-                // Validação de choque
                 const [conflicts] = await pool.query(`
                     SELECT task_type, first_name, TIME_FORMAT(start_time, "%H:%i") as start, TIME_FORMAT(end_time, "%H:%i") as end 
                     FROM tasks 
@@ -96,32 +102,92 @@ const server = http.createServer(async (req, res) => {
                     }));
                 }
 
-                // Inserção com os novos campos
                 const [result] = await pool.query(`
                     INSERT INTO tasks (date, task_type, first_name, description, start_time, duration_minutes, end_time) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `, [date, taskType || 'Oitiva', firstName, description, startTimeDb, durationMinutes, endTimeDb]);
 
-                const newTask = {
-                    id: result.insertId,
-                    date,
-                    taskType: taskType || 'Oitiva',
-                    firstName,
-                    description,
-                    startTime,
-                    durationMinutes: parseInt(durationMinutes),
-                    endTime: endTimeDb.substring(0, 5)
-                };
-
                 res.writeHead(201, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, task: newTask }));
-
+                res.end(JSON.stringify({ 
+                    success: true, 
+                    task: { id: result.insertId, date, taskType: taskType || 'Oitiva', firstName, description, startTime, durationMinutes: parseInt(durationMinutes), endTime: endTimeDb.substring(0, 5) }
+                }));
             } catch (error) {
-                console.error("Erro detetado no POST /api/tasks:", error); // Mostrará o erro real no painel do DomCloud
+                console.error(error);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, message: 'Erro interno ao salvar no banco de dados.' }));
+                res.end(JSON.stringify({ success: false, message: 'Erro interno ao salvar.' }));
             }
         });
+    }
+    // API PUT: Editar tarefa existente
+    else if (pathname === '/api/tasks' && method === 'PUT') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                const { id, date, description, startTime, durationMinutes, firstName, taskType } = JSON.parse(body);
+
+                if (!id || !date || !description || !startTime || !durationMinutes || !firstName) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ success: false, message: 'Dados incompletos para edição.' }));
+                }
+
+                const startMinutes = timeToMinutes(startTime);
+                const endMinutes = startMinutes + parseInt(durationMinutes);
+                const startTimeDb = `${startTime}:00`;
+                const endTimeDb = minutesToTime(endMinutes);
+
+                // IMPORTANTE: id != ? impede que o registro choque com o seu próprio horário antigo
+                const [conflicts] = await pool.query(`
+                    SELECT task_type, first_name, TIME_FORMAT(start_time, "%H:%i") as start, TIME_FORMAT(end_time, "%H:%i") as end 
+                    FROM tasks 
+                    WHERE date = ? AND ? < end_time AND ? > start_time AND id != ?
+                `, [date, startTimeDb, endTimeDb, id]);
+
+                if (conflicts.length > 0) {
+                    const conflict = conflicts[0];
+                    res.writeHead(409, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ 
+                        success: false, 
+                        message: `Choque de horário com: ${conflict.task_type} ${conflict.first_name} (${conflict.start} às ${conflict.end})` 
+                    }));
+                }
+
+                await pool.query(`
+                    UPDATE tasks 
+                    SET date = ?, task_type = ?, first_name = ?, description = ?, start_time = ?, duration_minutes = ?, end_time = ?
+                    WHERE id = ?
+                `, [date, taskType || 'Oitiva', firstName, description, startTimeDb, durationMinutes, endTimeDb, id]);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ 
+                    success: true, 
+                    task: { id, date, taskType: taskType || 'Oitiva', firstName, description, startTime, durationMinutes: parseInt(durationMinutes), endTime: endTimeDb.substring(0, 5) }
+                }));
+            } catch (error) {
+                console.error(error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, message: 'Erro interno ao atualizar.' }));
+            }
+        });
+    }
+    // API DELETE: Remover uma tarefa por ID
+    else if (pathname === '/api/tasks' && method === 'DELETE') {
+        try {
+            const id = parsedUrl.searchParams.get('id');
+            if (!id) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: false, message: 'ID não informado.' }));
+            }
+
+            await pool.query('DELETE FROM tasks WHERE id = ?', [id]);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+        } catch (error) {
+            console.error(error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Erro ao deletar do banco.' }));
+        }
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Não Encontrado');

@@ -7,10 +7,10 @@ const PORT = process.env.PORT || 3000;
 
 // Configuração do Pool de Conexões do MySQL (Dados vindos do DomCloud)
 const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'agenda_db',
+    host: process.env.DB_HOST || 'sao.domcloud.co',
+    user: process.env.DB_USER || 'calendario',
+    password: process.env.DB_PASSWORD || 'Nz92xbL5BiQ(-sX37-',
+    database: process.env.DB_NAME || 'calendario_calendario',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0

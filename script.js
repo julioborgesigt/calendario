@@ -58,8 +58,9 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(rows));
         } catch (error) {
+            console.error("Erro no GET /api/tasks:", error);
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, message: 'Erro ao buscar dados.' }));
+            res.end(JSON.stringify({ success: false, message: 'Erro ao buscar dados do banco.' }));
         }
     } 
     else if (req.url === '/api/tasks' && req.method === 'POST') {
@@ -95,6 +96,7 @@ const server = http.createServer(async (req, res) => {
                     }));
                 }
 
+                // Inserção com os novos campos
                 const [result] = await pool.query(`
                     INSERT INTO tasks (date, task_type, first_name, description, start_time, duration_minutes, end_time) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -115,8 +117,9 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: true, task: newTask }));
 
             } catch (error) {
+                console.error("Erro detetado no POST /api/tasks:", error); // Mostrará o erro real no painel do DomCloud
                 res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, message: 'Erro interno no servidor.' }));
+                res.end(JSON.stringify({ success: false, message: 'Erro interno ao salvar no banco de dados.' }));
             }
         });
     } else {

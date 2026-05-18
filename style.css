@@ -1,46 +1,331 @@
-/* Layout da linha de tarefas dentro do modal */
-.task-list-item { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 12px; 
-    border-bottom: 1px solid #e2e8f0; 
+/* ==========================================================================
+   1. RESET E CONFIGURAÇÕES GERAIS
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    background-color: #f4f6f9;
+    color: #333;
+    padding: 20px;
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+h2 {
+    margin-bottom: 25px;
+    color: #2c3e50;
+    text-align: center;
+    font-size: 1.8rem;
+}
+
+/* ==========================================================================
+   2. GRID DO CALENDÁRIO
+   ========================================================================== */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
     gap: 10px;
 }
+
+.day-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    min-height: 120px;
+    padding: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.day-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: #fdfdfd;
+}
+
+.day-number {
+    font-weight: bold;
+    color: #4a5568;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+
+/* ==========================================================================
+   3. INDICADORES DE TAREFAS (PÁGINA INICIAL)
+   ========================================================================== */
+.task-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.task-badge {
+    font-size: 0.75rem;
+    background: #3182ce;
+    color: white;
+    padding: 4px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   4. ESTRUTURA DO MODAL (BACKGROUND E CAIXA CENTRAL)
+   ========================================================================== */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: none; /* Controlado dinamicamente pelo JS via flex */
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.modal-content h3 {
+    color: #2d3748;
+    border-bottom: 2px solid #edf2f7;
+    padding-bottom: 8px;
+    font-size: 1.3rem;
+}
+
+.modal-content h4 {
+    margin-top: 10px;
+    color: #4a5568;
+    font-size: 1rem;
+}
+
+/* ==========================================================================
+   5. LISTAGEM DE AGENDAMENTOS DENTRO DO MODAL
+   ========================================================================== */
+.day-tasks-list {
+    max-height: 220px;
+    overflow-y: auto;
+    margin: 10px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+}
+
+.task-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    gap: 10px;
+}
+
+.task-list-item:last-child {
+    border-bottom: none;
+}
+
 .task-info {
     flex-grow: 1;
     font-size: 0.9rem;
     color: #2d3748;
 }
+
 .task-desc-text {
     font-size: 0.8rem;
     color: #718096;
     margin-top: 2px;
 }
 
-/* Container e botões de ação inline */
+.no-tasks {
+    padding: 25px;
+    text-align: center;
+    color: #a0aec0;
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   6. FORMULÁRIOS E ENTRADAS DE DADOS (INPUTS)
+   ========================================================================== */
+label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #718096;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+input, select {
+    padding: 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: #2d3748;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+}
+
+input:disabled, select:disabled {
+    background: #edf2f7;
+    color: #a0aec0;
+    cursor: not-allowed;
+}
+
+/* Caixa de Erro */
+.error-box {
+    background: #fff5f5;
+    color: #c53030;
+    border: 1px solid #fed7d7;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* ==========================================================================
+   7. BOTÕES E AÇÕES
+   ========================================================================== */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Botões do Rodapé do Modal */
+.btn-cancel {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.btn-cancel:hover {
+    background: #e2e8f0;
+}
+
+.btn-save {
+    background: #38a169;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #2f855a;
+}
+
+/* Botões Inline (Ações Rápidas na Lista do Modal) */
 .task-actions-inline {
     display: flex;
     gap: 6px;
-    align-shrink: 0;
+    flex-shrink: 0;
 }
+
 .task-actions-inline button {
-    padding: 5px 10px;
+    padding: 6px 12px;
     font-size: 0.75rem;
     border-radius: 4px;
     font-weight: 600;
 }
+
 .btn-inline-edit {
     background-color: #feebc8;
     color: #c05621;
 }
+
 .btn-inline-edit:hover {
     background-color: #fbd38d;
 }
+
 .btn-inline-delete {
     background-color: #fed7d7;
     color: #9b2c2c;
 }
+
 .btn-inline-delete:hover {
     background-color: #feb2b2;
+}
+
+/* ==========================================================================
+   8. RESPONSIVIDADE (DISPOSITIVOS MÓVEIS)
+   ========================================================================== */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .calendar-grid {
+        grid-template-columns: repeat(3, 1fr); /* Reduz colunas em telas médias */
+        gap: 6px;
+    }
+    
+    .day-card {
+        min-height: 90px;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-grid {
+        grid-template-columns: repeat(2, 1fr); /* Duas colunas para telas pequenas */
+    }
+    
+    .modal-content {
+        padding: 15px;
+        max-width: 95%;
+    }
+    
+    .task-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .task-actions-inline {
+        margin-top: 8px;
+        width: 100%;
+        justify-content: flex-end;
+    }
 }

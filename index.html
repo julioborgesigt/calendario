@@ -9,7 +9,13 @@
 <body>
 
     <div class="container">
-        <h2 id="calendar-title">Agendamento</h2>
+        <!-- Cabeçalho com botões de navegação de meses -->
+        <div class="calendar-header">
+            <button type="button" class="btn-nav" onclick="changeMonth(-1)">&lt; Mês Anterior</button>
+            <h2 id="calendar-title">Agendamento</h2>
+            <button type="button" class="btn-nav" onclick="changeMonth(1)">Próximo Mês &gt;</button>
+        </div>
+        
         <div class="calendar-grid" id="calendarGrid"></div>
     </div>
 
@@ -66,32 +72,80 @@
     <script>
         let tasks = [];
         let selectedDate = '';
-        let editingTaskId = null; // Controla se estamos editando (armazena o ID) ou criando (null)
+        let editingTaskId = null;
         
-        const today = new Date();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
+        // Mantém o controle do mês e ano visualizados
+        const todayObj = new Date();
+        let currentMonth = todayObj.getMonth();
+        let currentYear = todayObj.getFullYear();
 
-        document.getElementById('calendar-title').innerText = `Agendamento - Mês ${currentMonth + 1}/${currentYear}`;
+        const monthNames = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+
+        function updateTitle() {
+            document.getElementById('calendar-title').innerText = `${monthNames[currentMonth]} de ${currentYear}`;
+        }
 
         async function loadTasks() {
-            const res = await fetch('/api/tasks');
+            // Otimizado: Busca apenas as tarefas do mês/ano selecionados
+            const res = await fetch(`/api/tasks?month=${currentMonth + 1}&year=${currentYear}`);
             if (res.ok) {
                 tasks = await res.json();
                 renderCalendar();
             }
         }
 
+        function changeMonth(offset) {
+            currentMonth += offset;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            updateTitle();
+            loadTasks();
+        }
+
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
             grid.innerHTML = '';
+
+            // 1. Renderiza os cabeçalhos dos dias da semana
+            const dayHeaders = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            dayHeaders.forEach(dayName => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.innerText = dayName;
+                grid.appendChild(header);
+            });
+
+            // 2. Calcula o dia da semana em que o mês começa e o total de dias
+            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
+            // 3. Preenche os espaços em branco caso o mês não comece no Domingo
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyCard = document.createElement('div');
+                emptyCard.className = 'day-card empty';
+                grid.appendChild(emptyCard);
+            }
+
+            // 4. Renderiza os cartões dos dias reais do mês
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
                 const dayCard = document.createElement('div');
                 dayCard.className = 'day-card';
+                
+                // Destaca se for o dia de hoje
+                if (todayObj.getDate() === day && todayObj.getMonth() === currentMonth && todayObj.getFullYear() === currentYear) {
+                    dayCard.classList.add('today');
+                }
+                
                 dayCard.onclick = () => openModal(dayStr);
 
                 const dayNumber = document.createElement('span');
@@ -102,13 +156,14 @@
                 const indicators = document.createElement('div');
                 indicators.className = 'task-indicators';
 
+                // Filtra e ordena as tarefas do dia pelo horário de início
                 const dayTasks = tasks.filter(t => t.date === dayStr);
                 dayTasks.sort((a,b) => a.startTime.localeCompare(b.startTime));
 
                 dayTasks.forEach(task => {
                     const badge = document.createElement('div');
                     badge.className = 'task-badge';
-                    badge.innerText = `${task.taskType} ${task.firstName}`;
+                    badge.innerText = `${task.startTime} - ${task.firstName}`;
                     indicators.appendChild(badge);
                 });
 
@@ -210,7 +265,6 @@
                 durationMinutes: parseInt(document.getElementById('duration').value)
             };
 
-            // Se editingTaskId possuir valor, mudamos para PUT e incluímos o id no corpo
             const isEditing = editingTaskId !== null;
             if (isEditing) payload.id = editingTaskId;
 
@@ -238,6 +292,8 @@
             closeModal();
         };
 
+        // Inicialização
+        updateTitle();
         loadTasks();
     </script>
 </body>

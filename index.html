@@ -15,13 +15,32 @@
 
     <div class="modal-backdrop" id="modal">
         <div class="modal-content">
-            <h3 id="modalTitle">Nova Tarefa</h3>
+            <h3 id="modalTitle">Opções do Dia</h3>
             <div class="error-box" id="errorBox" style="display: none;"></div>
 
-            <form id="taskForm">
+            <div id="viewScheduleSection">
+                <h4>Agendamentos Cadastrados:</h4>
+                <div id="dayTasksList" class="day-tasks-list"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Fechar</button>
+                    <button type="button" class="btn-save" onclick="showFormSection()">Agendar Novo</button>
+                </div>
+            </div>
+
+            <form id="taskForm" style="display: none;">
+                <label>
+                    Tipo de Tarefa:
+                    <select id="taskType" disabled>
+                        <option value="Oitiva" selected>Oitiva</option>
+                    </select>
+                </label>
+                <label>
+                    Primeiro Nome:
+                    <input type="text" id="firstName" required placeholder="Ex: João">
+                </label>
                 <label>
                     Descrição:
-                    <input type="text" id="description" required placeholder="Ex: Atendimento ao cliente">
+                    <input type="text" id="description" required placeholder="Ex: Detalhes do agendamento">
                 </label>
                 <label>
                     Horário de Início:
@@ -37,8 +56,8 @@
                     </select>
                 </label>
                 <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
-                    <button type="submit" class="btn-save">Salvar Tarefa</button>
+                    <button type="button" class="btn-cancel" onclick="showViewSection()">Voltar</button>
+                    <button type="submit" class="btn-save">Salvar Agendamento</button>
                 </div>
             </form>
         </div>
@@ -87,7 +106,8 @@
                 dayTasks.forEach(task => {
                     const badge = document.createElement('div');
                     badge.className = 'task-badge';
-                    badge.innerText = `${task.startTime} - ${task.description}`;
+                    // REGRA: Exibir apenas "Oitiva primeiro nome"
+                    badge.innerText = `${task.taskType} ${task.firstName}`;
                     indicators.appendChild(badge);
                 });
 
@@ -98,9 +118,38 @@
 
         function openModal(date) {
             selectedDate = date;
-            document.getElementById('modalTitle').innerText = `Nova Tarefa: ${date}`;
+            document.getElementById('modalTitle').innerText = `Data: ${date.split('-').reverse().join('/')}`;
             document.getElementById('errorBox').style.display = 'none';
+            
+            showViewSection(); 
             document.getElementById('modal').style.display = 'flex';
+        }
+
+        function showViewSection() {
+            document.getElementById('taskForm').style.display = 'none';
+            document.getElementById('viewScheduleSection').style.display = 'block';
+            
+            const listContainer = document.getElementById('dayTasksList');
+            listContainer.innerHTML = '';
+
+            const dayTasks = tasks.filter(t => t.date === selectedDate);
+            dayTasks.sort((a,b) => a.startTime.localeCompare(b.startTime));
+
+            if (dayTasks.length === 0) {
+                listContainer.innerHTML = '<p class="no-tasks">Nenhum agendamento para este dia.</p>';
+            } else {
+                dayTasks.forEach(task => {
+                    const item = document.createElement('div');
+                    item.className = 'task-list-item';
+                    item.innerHTML = `<strong>${task.startTime} às ${task.endTime}</strong> - ${task.taskType} ${task.firstName}<br><small>${task.description}</small>`;
+                    listContainer.appendChild(item);
+                });
+            }
+        }
+
+        function showFormSection() {
+            document.getElementById('viewScheduleSection').style.display = 'none';
+            document.getElementById('taskForm').style.display = 'block';
         }
 
         function closeModal() {
@@ -115,6 +164,8 @@
 
             const payload = {
                 date: selectedDate,
+                taskType: 'Oitiva',
+                firstName: document.getElementById('firstName').value,
                 description: document.getElementById('description').value,
                 startTime: document.getElementById('startTime').value,
                 durationMinutes: parseInt(document.getElementById('duration').value)

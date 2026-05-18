@@ -2,20 +2,34 @@
 body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; color: #333; padding: 20px; }
 .container { max-width: 1000px; margin: 0 auto; }
 h2 { margin-bottom: 20px; color: #2c3e50; text-align: center; }
+
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
 .day-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; min-height: 110px; padding: 10px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
 .day-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 .day-number { font-weight: bold; color: #4a5568; font-size: 1.1rem; margin-bottom: 6px; }
+
 .task-indicators { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; overflow-y: auto; }
-.task-badge { font-size: 0.7rem; background: #3182ce; color: white; padding: 3px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-badge { font-size: 0.75rem; background: #3182ce; color: white; padding: 4px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+/* Modais e Listas internas */
 .modal-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 100; }
-.modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 15px; }
+.modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 440px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 15px; }
+h4 { margin-top: 10px; color: #4a5568; }
+
+.day-tasks-list { max-height: 200px; overflow-y: auto; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; }
+.task-list-item { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
+.task-list-item:last-child { border-bottom: none; }
+.no-tasks { padding: 20px; text-align: center; color: #a0aec0; font-size: 0.9rem; }
+
 label { display: flex; flex-direction: column; font-size: 0.85rem; font-weight: 600; color: #718096; gap: 6px; margin-top: 10px; }
 input, select { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.95rem; outline: none; }
 input:focus, select:focus { border-color: #3182ce; }
+input:disabled, select:disabled { background: #edf2f7; color: #a0aec0; cursor: not-allowed; }
+
 .error-box { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; padding: 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 15px; }
 button { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
 .btn-cancel { background: #edf2f7; color: #4a5568; }
 .btn-save { background: #38a169; color: white; }
+
 @media (max-width: 768px) { .calendar-grid { grid-template-columns: repeat(4, 1fr); } }

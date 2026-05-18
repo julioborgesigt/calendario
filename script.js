@@ -29,28 +29,26 @@ function minutesToTime(totalMinutes) {
 }
 
 const server = http.createServer(async (req, res) => {
-    // Rota: Página Inicial
     if (req.url === '/' && req.method === 'GET') {
         fs.readFile(path.join(__dirname, 'index.html'), (err, content) => {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(content);
         });
     } 
-    // Rota: Estilos CSS
     else if (req.url === '/style.css' && req.method === 'GET') {
         fs.readFile(path.join(__dirname, 'style.css'), (err, content) => {
             res.writeHead(200, { 'Content-Type': 'text/css' });
             res.end(content);
         });
     } 
-    // API GET: Buscar tarefas do banco de dados
     else if (req.url === '/api/tasks' && req.method === 'GET') {
         try {
-            // Buscamos formatando a data e hora direto no SQL para evitar fuso horário do Node
             const [rows] = await pool.query(`
                 SELECT 
                     id, 
                     DATE_FORMAT(date, "%Y-%m-%d") as date, 
+                    task_type as taskType,
+                    first_name as firstName,
                     description, 
                     TIME_FORMAT(start_time, "%H:%i") as startTime, 
                     duration_minutes as durationMinutes, 
@@ -61,32 +59,29 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify(rows));
         } catch (error) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, message: 'Erro ao buscar dados do MySQL.' }));
+            res.end(JSON.stringify({ success: false, message: 'Erro ao buscar dados.' }));
         }
     } 
-    // API POST: Validar choque direto no SQL e salvar tarefa
     else if (req.url === '/api/tasks' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', async () => {
             try {
-                const { date, description, startTime, durationMinutes } = JSON.parse(body);
+                const { date, description, startTime, durationMinutes, firstName, taskType } = JSON.parse(body);
 
-                if (!date || !description || !startTime || !durationMinutes) {
+                if (!date || !description || !startTime || !durationMinutes || !firstName) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({ success: false, message: 'Preencha todos os campos!' }));
+                    return res.end(JSON.stringify({ success: false, message: 'Preencha todos os campos obrigatórios!' }));
                 }
 
-                // Cálculos de Horários
                 const startMinutes = timeToMinutes(startTime);
                 const endMinutes = startMinutes + parseInt(durationMinutes);
-                
                 const startTimeDb = `${startTime}:00`;
                 const endTimeDb = minutesToTime(endMinutes);
 
-                // Lógica de choque otimizada direto na Query SQL
+                // Validação de choque
                 const [conflicts] = await pool.query(`
-                    SELECT description, TIME_FORMAT(start_time, "%H:%i") as start, TIME_FORMAT(end_time, "%H:%i") as end 
+                    SELECT task_type, first_name, TIME_FORMAT(start_time, "%H:%i") as start, TIME_FORMAT(end_time, "%H:%i") as end 
                     FROM tasks 
                     WHERE date = ? AND ? < end_time AND ? > start_time
                 `, [date, startTimeDb, endTimeDb]);
@@ -96,19 +91,20 @@ const server = http.createServer(async (req, res) => {
                     res.writeHead(409, { 'Content-Type': 'application/json' });
                     return res.end(JSON.stringify({ 
                         success: false, 
-                        message: `Choque de horário com a tarefa "${conflict.description}" (${conflict.start} às ${conflict.end})` 
+                        message: `Choque de horário com: ${conflict.task_type} ${conflict.first_name} (${conflict.start} às ${conflict.end})` 
                     }));
                 }
 
-                // Inserção no banco de dados se não houver choque
                 const [result] = await pool.query(`
-                    INSERT INTO tasks (date, description, start_time, duration_minutes, end_time) 
-                    VALUES (?, ?, ?, ?, ?)
-                `, [date, description, startTimeDb, durationMinutes, endTimeDb]);
+                    INSERT INTO tasks (date, task_type, first_name, description, start_time, duration_minutes, end_time) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                `, [date, taskType || 'Oitiva', firstName, description, startTimeDb, durationMinutes, endTimeDb]);
 
                 const newTask = {
                     id: result.insertId,
                     date,
+                    taskType: taskType || 'Oitiva',
+                    firstName,
                     description,
                     startTime,
                     durationMinutes: parseInt(durationMinutes),
@@ -120,7 +116,7 @@ const server = http.createServer(async (req, res) => {
 
             } catch (error) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, message: 'Erro interno no servidor MySQL.' }));
+                res.end(JSON.stringify({ success: false, message: 'Erro interno no servidor.' }));
             }
         });
     } else {
@@ -130,5 +126,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Servidor ativo na porta ${PORT}`);
 });
